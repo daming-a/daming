@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 requests模块的应用:
 
