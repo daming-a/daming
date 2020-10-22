@@ -1,0 +1,126 @@
+'''
+写在前面，
+本程序是一个死循环程序，循环的从-数据库读取和写入抓取到的代理ip,
+并对每个代理ip进行-可用性筛选
+结果通过打印的方式-展示出来
+实现过程还是存在很大缺陷，比较粗糙，但已可以初步实现--可用IP代理池的构建，之后就是复制加粘贴啦，哈哈哈哈
+
+# 简单测试了一下，数量稳定在39个是可用的， 当然这是在一个网站上， 也可以继续拓展到其他ip代理网站，当然也不要瞎搞啊
+'''
+
+import grequests  # 暂时没有用上
+import requests
+import asyncio
+import aiohttp
+from fake_useragent import UserAgent
+from pyquery import PyQuery as pq
+from time import sleep
+from redis import Redis
+from queue import Queue  # 实际想用多线程的
+
+# 构建代理池：爬取+存储+检查
+# 代理格式proxy = {"http":"http://112.80.248.18:80"}
+# aiohttp模块的代理格式proxy = "http://112.80.248.18:80"  注意：直接就是字符串   该模块结合asyncio实现了网络的异步请求,效率更高
+# 目标网站地址https://ip.jiangxianli.com/?page=1  共11页
+# 存储到redis数据库, set类型，去重 sadd-添加 spop()-弹出  set类型是无序的
+# 注意：redis读取的数据是bytes类型， 所以使用decode()-->字符串
+
+
+headers = {'User-Agent': UserAgent().random}
+
+# 网页请求
+def url_request():
+    session = requests.Session()
+    response_list = []
+    for url in [f"https://ip.jiangxianli.com/?page={i}" for i in range(1, 12)]:
+        response = session.request('get', url, headers=headers).text
+        response_list.append(response)
+    return response_list
+
+
+# 解析网页
+def parse(html_list):
+    for html in html_list:
+        doc = pq(html)
+        if doc('tr td:contains("高匿")'):
+            for button in doc('tr button:contains("复制")').items():
+                yield button.attr("data-url")
+
+
+# 异步请求网络 -- 检查可用性
+async def func_request(proxy):
+    # aiohttp模块异于requests的地方， text([encoding='utf-8'])文本--[]中括号代表可选项  read()二进制 status状态码 proxy=“http:...”
+    #          相同处：get/post/cookies/headers/timeout/params/data等
+    # aiohttp模块使用代理的方式， proxy = “http:....”  直接是字符串
+    # async - await 实现了异步
+    url = "http://www.baidu.com"
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with await session.get(url, proxy=proxy, timeout=5) as response:
+                pass  # 占位符  使语句完整 不构成语义
+        except Exception as e:
+            print(f'出错啦{e}')
+        else:
+            # 代理可用200
+            if response.status == 200:
+                # 将可以使用的代理，再次存入数据库 -- 过滤掉不可用的
+                save_redis(proxy)
+                # 选取筛选可用的，打印出来
+                print(proxy)
+            # 这里做处理时，必须要一个await  例：html = await response.text() 再return html   这里await挂起操作，实现异步的关键
+
+
+# 定义一个事件循环
+def loop_event(q):
+    while True:
+        if not q.empty():
+            proxies = q.get()
+            # 注意：将redis读取的数据转换为字符串 bytes-decode()->str
+            tasks = [func_request(proxy.decode()) for proxy in proxies]
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(asyncio.wait(tasks))
+        else:
+            break
+
+
+# 连接数据库,读取数据
+def read_redis(q):
+    # 从redis读取数据 bytes类型， 需要decode() --> 字符串
+    conn = Redis(host='127.0.0.1', port=6379)
+    proxies = conn.spop('proxies', count=5)
+    q.put(proxies)
+    # return proxies
+
+
+# 连接并存储数据库
+def save_redis(item):
+    # 存入列表
+    connect = Redis(host="127.0.0.1", port=6379)
+    connect.sadd('proxies', item)
+
+
+# 逻辑处理 -- 只负责逻辑， 其他在函数中完成
+def main():
+    q = Queue(maxsize=5)
+    # 循环ip代理池的构建 -- 简略版
+    conn = Redis(host="127.0.0.1", port=6379)
+    while True:
+        # 判断数据库中是否存在proxies键
+        if conn.exists('proxies') != 0:
+            read_redis(q)
+            if q.qsize() > 4:
+                loop_event(q)
+                print('----此处分隔，休息一下----')
+                sleep(10)
+            else:
+                continue
+        else:
+            # 不存在则创建， 当key无值可取时也为0
+            html_list = url_request()
+            for item in parse(html_list):
+                save_redis(item)
+
+
+if __name__ == '__main__':
+    main()
+
