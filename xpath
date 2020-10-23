@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+from lxml import etree
+import requests
+
+url = 'http://www.baidu.com'
+html = requests.get(url).text
+tree = etree.HTML(html)
+url = tree.xpath('//div[@id="lg"]/img/@src')
+# ['//www.baidu.com/img/bd_logo1.png']  -- list
+'''
+//  ./  [@id=“lg”]  /a[last()]|/a[last()-1]  /text()  /@href  div[contains(text(),'下一页')]  div[contains(@id,'lg')]    
+'''
+
+print(html)
+print(url)
