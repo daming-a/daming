@@ -1,0 +1,99 @@
+# -*- coding: utf-8 -*-
+'''
+处理ajax异步加载的网页，获取网页全部的源码 -- selenium + phantomjs  自动化测试
+
+用python的selenium库，用webdriver加载页面来获取内容，然后再用xpath解析里面的数据--
+
+'''
+from lxml import etree  # -- xpath-list -- [推导式] (生成器)
+from time import sleep
+from selenium import webdriver
+# 无头浏览器设置
+from selenium.webdriver.chrome.options import Options
+# 规避检测设置
+from selenium.webdriver import ChromeOptions
+
+# PhantomJS 浏览器
+# 使用低版本的selenium 2.48 支持PhantomJS
+# bro = webdriver.PhantomJS(service_args=['--load-images = false', '--disk-cache = true'])  # 参数表示：不加载图片，进行内存缓存 速度快
+# bro.set_window_size(1400, 900)  # 设置窗口大小
+
+# 设置Chrome无头浏览器 无头浏览器  -headless
+op = Options()
+op.add_argument('--headless')
+bro = webdriver.Chrome(chrome_options=op)
+
+# 设置：不加载图片 并进行相应的缓存  以提高效率
+# from selenium.webdriver import ChromeOptions
+# bro = webdriver.Chrome()
+# bro.get('http://www.taobao.com')
+# op = ChromeOptions()
+# prefs = {"profile.managed_default_content_settings.images": 2}
+# op.add_experimental_option("prefs", prefs)
+# driver = webdriver.Chrome(chrome_options=op)
+
+# 规避检测
+# from selenium.webdriver import ChromeOptions
+# op = ChromeOptions()
+# op.add_experimental_option("excludeSwitches", ["enable-automation"])
+# browser_noPic = webdriver.Chrome(executable_path=path, chrome_options=op)
+
+# 请求url
+bro.get('https://list.jd.com/list.html?cat=9987,653,655')
+
+# 对网页进行操作
+bro.find_element_by_id("key").send_keys('零食')
+bro.find_element_by_xpath('//*[@id="search-2014"]/div/button').click()
+bro.find_element_by_css_selector('#search-2014')
+
+# 加了 -s 表示获取的是多个元素  # 表示id . 表示class  意思是  div[@class="title"]/li
+bro.find_elements_by_id(".title li")
+
+# 结合time模块， 给浏览器的加载留出时间
+sleep(1)
+# selenium下拉致底部(执行js代码) 或者在底部找到一个定位点  迫使浏览器找寻到底部
+bro.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+
+# 等待页面加载完毕
+# ====隐式等待 10s以内  再网速很慢的时候， 可以这样处理   ==== 显式等待  有点麻烦- 后期可以了解
+bro.implicitly_wait(10)
+
+# 获取到页面全部数据   页面加载顺序 html文本 --》 底部的js加载渲染
+text = bro.page_source
+
+# 当面对多个网页的bro.get() 时
+# bro.back()  # 后退操作
+# bro.forward() # 前进操作
+# bro.get_cookies() # 获取cookies
+
+# 定位
+# bro.find_element_by_xpath(xpath规则)
+# bro.find_element_by_id('id属性')
+# bro.execute_script('js代码')
+# bro.set_script_timeout('timeout时限')
+# bro.find_element_by_css_selector(css_selector=)
+# bro.get_screenshot_as_file(filename=)截图
+# bro.find_element_by_class_name('class属性').text 文本  返回对象.方法
+
+# 设置动作链
+# from selenium.webdriver import ActionChains
+# url = ''
+# brow = webdriver.Chrome()
+# brow.get(url)
+# 需要求切换到frame中， 才能执行的操作
+# brow.switch_to_frame(frame_reference=)
+# start = brow.find_elements_by_id('')
+# stop = brow.find_elements_by_id('')
+# # 生成一个动作链对象
+# actions = ActionChains(brow)
+# # 将定位目标从起始位置 -- start -> stop
+# actions.drag_and_drop(start,stop)
+# actions.perform()
+
+# 或者
+#    actions.click_and_hold(div) 长安点击
+#    actions.move_by_offset(x,y).perform() 拖动并执行
+# actions.release()  释放
+
+# 最终要关闭浏览器
+bro.close()
