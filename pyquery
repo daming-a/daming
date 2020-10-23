@@ -1,0 +1,56 @@
+# -*- coding: utf-8 -*-
+from pyquery import PyQuery as pq
+
+'''
+pyquery库是jQuery的Python实现，能够以jQuery的语法来操作解析 HTML 文档，易用性和解析速度都很好。特别适合进行访问和解析网页数据
+'''
+url = 'http://www.baidu.com'
+# 对网页的初始化 url  跟requests一样的访问网站 返回的是PyQuery对象  可以用response.html() -- 得到响应内容
+# response = pq(url, encoding='utf-8', headers={'User-Agent': UserAgent().random},,cookies=cookies).html()
+# 对网页的响应的初始化
+# response = pq(requests.get(url).text)
+# 打开本地html文件
+# response = pq(filename='index.html')
+# print(response)
+#
+# # 常用的css选择器
+'''
+# 实例化一个对象 参数html
+doc = PyQuery(html)
+# 获取属性
+doc('#haha .item-0 a span')
+定位到：id='haha' - class='item-0' - a标签 - span标签 
+逐级定位， 属性之间用空格隔开 表示层级 -- 返回的是对象
+# 可使用.html() .text() .items() 取出目标需求 
+
+
+. class  .title  ==> class = 'title'    
+# id     #title  ==> id = 'title'
+element       p  ==> p标签的所有节点
+ele ele   div p  ==> div 下的所有p节点  中间用空格隔开
+[title] [title]  ==> 选出全部title属性的节点
+
+
+.items() --  <generator object PyQuery.items at 0x03DAAD48> 对象  遍历取值  for a in doc('a').items(): url = a.attr('href') 
+.text()  --  文本
+.html()  --  输出**子节点的html
+.clear()
+.eq(index)-- 取出具体位置的值  
+.attr('href') 获取属性值
+.find()  --  寻找属性对象
+'''
+doc = pq(url, encoding='utf-8')
+__id = doc('#head')  # 寻找id 属性的所有对象
+class_ = doc(".mnav")  # 所有对象class属性是mnav的
+a = doc('a').text()  # 所有a标签 的文本
+items = doc.items('a')  # a 标签的可迭代对象 [i.text() for i in doc.items('a')]
+children = doc.find('#head').children()  # find方法， id=head的所有子节点
+c = doc('a').html()  # 输出a的子节点的html
+
+# 多种选择器使用
+href = doc("a[href]")  # 所有 a标签 带有href属性
+news = doc('a:contains("新闻")')  # 所有 a标签 带有“新闻”文本的
+print(news)
+href_v = doc('a[href]').items()  #
+doc('a:first-child')
+doc('a:last-child').attr('href')
