@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+'''
+线程实现 threading模块
+
+在IO密集型的任务中 如：网络请求， 数据存储 提高效率
+
+线程写入数据不安全  可使用Lock类  使用with lock: 加锁操作， 获取数据上的安全
+'''
+import threading
+import requests
+# 加线程锁 使数据安全
+from threading import Lock
+# 队列  实现生产者消费者  提高效率
+import queue
+import time
+
+
+# 创建一个爬虫
+# 创建一个请求函数
+def url_reuqest(url, q):
+    response = requests.get(url).status_code
+    print(response)
+    # 数据放入队列
+    q.put(response)
+    q.join()
+
+    return response
+
+
+# 数据下载
+def down_load(q):
+    # 队列中有数据 就取出
+    while True:
+        # 判断队列 不为空
+        if q.empty():
+            break
+        else:
+            response = q.get()
+            # 线程加锁
+            with lock:
+                with open('a.txt', 'a+', encoding='utf-8') as a:
+                    a.write(str(response))
+                    q.task_done()
+
+
+# 主要逻辑
+if __name__ == '__main__':
+    # 实例一个Lock线程锁 对象  with lock: 调用
+    lock = Lock()
+    # 创建一个队列 生产者消费者实现
+    q = queue.Queue()
+
+    t_list = []
+    # 创建一个线程 网络请求
+    url_list = ['http://www.baidu.com', 'http://www.sogou.com']
+    for url in url_list:
+        t = threading.Thread(target=url_reuqest, args=(url, q))
+        t.start()
+        t_list.append(t)
+
+    # 等待生产者制作的过程   就是让生产者先开始工作
+    time.sleep(1)
+    # 创建一个线程 本地存储
+    t2 = threading.Thread(target=down_load, args=(q,))
+    # 也可在创建Thread对象时通过daemon参数将其设为后台线程
+    # t.daemon = True
+    t2.start()
+
+    for t in t_list:
+        t.join()
+    # t.join()  # 等待所有子线程结束
+    t2.join()
+    print('主线程')
