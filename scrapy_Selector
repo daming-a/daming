@@ -1,0 +1,22 @@
+from scrapy import Selector
+import requests
+
+url = "http://www.baidu.com"
+html = requests.get(url)
+html.encoding = 'utf-8'
+print(html.text)
+select = Selector(text=html.text)
+a = select.css('a').extract()  # -- list
+b = select.css('a::text').extract()  # --> list
+c = select.css('a').xpath('./@href').extract()  # -- list
+d = select.css('a').xpath('./@href').re('http.*?\.com')  # -- list
+
+print(a)
+print(b)
+print(c)
+print(d)
+import redis
+
+conn = redis.Redis(host='127.0.0.1', port=6379)
+for i in b:
+    conn.sadd('test', i)
