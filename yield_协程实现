@@ -1,0 +1,54 @@
+import time
+import requests
+from scrapy import Selector
+
+'''
+生产者生产消息后，直接yield跳转到消费者执行，待消费者执行完毕，切换回生产者继续生产
+
+关键字：def-yield 函数生成器 | c.__next__() 启动生成器  |    c.close() 关闭消费者
+
+https://cloud.tencent.com/developer/article/1142954  多看多学  yield协程实现
+'''
+
+
+# 解析网页
+def parse(html):
+    select = Selector(text=html)
+    for href in select.css('a').xpath('./@href').extract():
+        yield href
+
+
+# 消费者 def-yield 构成生成器  url(生产者传入值) = yield href(消费者返回值)
+def consumer():
+    # 返回值-初始化 ,以下再进行赋值
+    href = None
+    while True:
+        # yield指令具有return关键字的作用。然后函数的堆栈会自动冻结(freeze)在这一行
+        url = yield href
+        html = requests.get(url).text
+        # 返回值赋值， 可调用其他函数
+        href = parse(html)
+
+
+# 生产者 调用生成器 c.__next__()  向生成器传值c.send(值)
+def producer(c):
+    # 调用c.next() 启动生成器
+    c.__next__()
+    url_list = [f"https://weixin.sogou.com/pcindex/pc/pc_0/{i}.html" for i in range(1, 5)]
+    # c.send(n) 跳转到消费者执行； 拿到返回值c_r，继续生产下一条消息
+    for url in url_list:
+        c_r = c.send(url)
+        # 最终，在生产者拿到结果
+        # print(f'producer -- consumer:return {c_r}')
+        for r in c_r:
+            print(r)
+    # 生产完毕，通过c.close(), 关闭消费者，过程结束
+    c.close()
+
+
+if __name__ == '__main__':
+    # 整个流程无锁，由一个线程执行，producer和consumer协作完成，而非线程的抢占式多任务
+    s = time.time()
+    c = consumer()
+    producer(c)
+    print(time.time() - s)
