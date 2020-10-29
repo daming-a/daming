@@ -1,0 +1,142 @@
+'''
+电影天堂-效率下载
+1.输入电影名称，获取电影链接
+2.多任务下载，提高效率
+    难点：将一个大文件拆分为数个小文件，并进行标识-排序-队列FIFO，再多线程下载，最后需要按照排序拼接到一起
+
+再构思：
+    在线观看-资源下载到内存中，中止/终止程序，清除缓存
+    下载资源-资源下载到本地，中止/终止程序，保存已下载片段，以及requests指纹， 方便再次连接下载
+
+    设计一个客户端到网页上去，通过搜索电影名称，支持在线观看和本地存储
+    线上的这类网站太多了，主要优势必须是：1.观影不卡顿-解决缓存的问题；2.本地存储中断后-可接续问题；3.本地存储-效率问题；4.电影资源-可以涉及到多个电影平台
+
+'''
+import requests
+from fake_useragent import UserAgent
+from scrapy import Selector
+from multiprocessing.dummy import Pool as Thread_Pool
+from multiprocessing import Process
+import os
+
+# 目标地址
+url = "http://www.98784.cc/index.php?m=vod-search"
+headers = {'User-Agent': UserAgent().random}
+
+
+# proxies = {'http': "http://180.149.144.224:80"} , proxies=proxies
+
+
+# 发送post请求-放回响应体
+def url_request(url, data):
+    session = requests.Session()
+    response = session.request('post', url, data=data, headers=headers)
+    return response
+
+
+# 解析响应体-返回电影下载连接xxx.mp4
+def parse(response):
+    select = Selector(text=response.text)
+    for i in select.css('strong a'):
+        item = {}
+        item['href'] = f"http://www.98784.cc{i.xpath('./@href').extract_first()}"
+        item['title'] = i.xpath('./@title').extract_first()
+        yield item
+
+
+# 请求详情页
+def detail_request(url):
+    data = ""
+    return url_request(url, data)
+
+
+def detail_parse(response):
+    select = Selector(text=response.text)
+    href_list = select.css('span a').xpath('./@href').re('http.*')
+    return href_list
+
+
+# 下载资源
+def down_load(url):
+    start = 0
+    end = -1
+    # 获取filename 并创建文件夹
+    _, filename = os.path.split(url)
+    dir = fr'D:\movies\\'
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+    # 获取文件的bytes大小
+    file_size = int(requests.head(url).headers['Content-Length'])
+    print(file_size)
+    # # 将文件分段请求
+    # header = {'Range': 'bytes={}-{}'.format(start, end)}
+    # response = requests.get(url, headers=header)
+
+    # 定义线程
+    # num = 4
+    # pool = Thread_Pool(num)
+    # step = file_size / num
+    #
+    # with open(f"{dir}{filename}", 'wb') as w:
+    #     fileno = w.fileno()  # 返回一个整型的文件描述符，可用于底层操作系统的IO
+    #     while end < file_size - 1:
+    #         start = end + 1
+    #         end = start + step - 1
+    #         if end > file_size:
+    #             end = file_size
+    #         print(f'start{start},end{end}')
+    #         dup = os.dup(fileno)
+    #         fd = os.fdopen(dup, 'wb', -1)
+
+    # aa(start,end,fd)
+    # pool.apply_async(aa,args=(start,end,fd))
+
+    # fd.seek(start)
+    # fd.write(response.content)
+    # fd.close()
+
+    # w.write(reqponse.content)
+    # pass
+
+
+def down(url):
+    # 获取filename 并创建文件夹
+    _, filename = os.path.split(url)
+    dir = fr'D:\movies\\'
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+
+    # 请求并下载 url = xxx.mp4
+    # 设置为流模式 - 下载时间缩短一半***************************
+    data = requests.get(url, stream=True)
+
+    _, filename = os.path.split(url)
+    with open(f'D:\movies\\{filename}', 'wb') as w:
+        for chunk in data.iter_content(chunk_size=1024 * 1000 * 10):
+            if chunk:
+                w.write(chunk)
+
+
+# 主要逻辑
+def main():
+    data = {'wd': '贪狼'}
+    response = url_request(url, data)
+
+    for item in parse(response):
+        print(item)
+        response = detail_request(item['href'])
+        mp4_url = detail_parse(response)
+        print(mp4_url)
+        if len(mp4_url) != 0:
+            down(mp4_url[0])
+            break
+        else:
+            print('没有资源')
+
+
+if __name__ == '__main__':
+    # main()
+
+    p = Process(target=main)
+    p.start()
+    p.join()
