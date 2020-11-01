@@ -1,0 +1,47 @@
+'''
+算法：化解问题--归纳结论--得出结果
+
+'''
+import random
+
+'''
+归并排序  两段有序，归并排序
+
+'''
+
+
+# 归并排序 时间复杂度O(nlogn)  空间复杂度O(n)-创建了额外的列表
+def merge(li, low, mid, high):
+    i = low
+    j = mid + 1
+    l_tmp = []
+    while i <= mid and j <= high:  # 只要左右两边都有数值
+        if li[i] < li[j]:
+            l_tmp.append(li[i])
+            i += 1
+        else:
+            l_tmp.append(li[j])
+            j += 1
+    # while执行完毕，可定有一部分没有数值
+    while i <= mid:
+        l_tmp.append(li[i])
+        i += 1
+    while j <= high:
+        l_tmp.append(li[j])
+        j += 1
+    # 将临时列表的值，重写会原列表
+    li[low:high + 1] = l_tmp
+
+
+def merge_sort(li, low, high):
+    if low < high:  # 至少有两个元素，递归实现
+        mid = (low + high) // 2
+        merge_sort(li, low, mid)
+        merge_sort(li, mid + 1, high)
+        merge(li, low, mid, high)
+
+
+li = [2, 3, 6, 4, 1, 5, 8, 0, 4, 7, 9]
+print(li)
+merge_sort(li, 0, len(li) - 1)
+print(li)
