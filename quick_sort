@@ -1,0 +1,41 @@
+'''
+快速排序  中间值 左侧都比mid小，右侧都比mid大
+
+随机取值作为tmp，消除最坏情况
+
+'''
+import random
+
+
+def partition(li, left, right):
+    tmp = li[left]  # 取出第一个值，作为基准值
+    while left < right:  # 至少有两个值
+        # 从右侧开始
+        while li[right] >= tmp and left < right:  # 右侧均大于tmp
+            right -= 1
+        # 将右边的值替换到左侧
+        li[left] = li[right]
+        while li[left] <= tmp and left < right:  # 左侧均小于tmp
+            left += 1
+        li[right] = li[left]
+    li[left] = tmp  # 将取出的值放回列表 ， 此刻，其左侧均小于，其右侧均大于
+    return left  # 返回其下标值
+
+
+def _quick_sort(li, left, right):
+    if left < right:
+        mid = partition(li, left, right)  # 获取基准值的--下标值，作为“中间值”
+        _quick_sort(li, left, mid - 1)  # 左侧有序  mid-1 中间值不参加排序
+        _quick_sort(li, mid + 1, right)  # 右侧有序
+
+
+def quick_sort(li):  # 递归调用--外层加一个马甲
+    _quick_sort(li, 0, len(li) - 1)
+
+
+if __name__ == '__main__':
+    li = [random.randint(0, 20) for i in range(10000)]
+    random.shuffle(li)
+    print(li)
+    quick_sort(li)
+    print(li)
