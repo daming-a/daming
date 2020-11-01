@@ -1,0 +1,51 @@
+'''
+算法：化解问题--归纳结论--得出结果
+
+'''
+import random
+
+'''
+时间复杂度O(n2) 原地排序
+
+冒泡排序、选择排序、插入排序
+
+'''
+
+# 冒泡排序 O(n2)
+# def bubble_sort(li):
+#     for i in range(len(li) - 1):  # 第i躺
+#         exchange = False# 标志位，执行了交换，改变标志位
+#         for j in range(len(li) - i - 1):
+#             if li[j] > li[j + 1]: # 比较--值的交换
+#                 li[j], li[j + 1] = li[j + 1], li[j]
+#                 exchange = True
+#         if not exchange:
+#             # 如果标志位没有变换--结束  [0,3,2,5,7,8,9,10]  处理后几位为排好序的情况--进行判断，缩短for循环的次数
+#             return
+
+# 选择排序 O(n2) - 有序区和无序区、无序区最小数的位置
+# def select_sort(li):
+#     for i in range(len(li) - 1):
+#         min_loc = i  # 无序区最小值的位置
+#         for j in range(i, len(li)):  # 有序区和无序区  j为无序区开始，无序区区间从i-len(li)
+#             if li[j] < li[min_loc]:
+#                 min_loc = j
+#         li[i], li[min_loc] = li[min_loc], li[i]
+
+# 插入排序 O(n2)
+def insert_sort(li):
+    for i in range(1, len(li)):  # i表示-摸到的牌的下标
+        tmp = li[i]  # tmp表示摸到的牌
+        j = i - 1  # j为手里的牌
+        while li[j] > tmp and j >= 0:  # 手里的牌大于摸到的牌，并且满足可以摸到牌
+            li[j + 1] = li[j]
+            j -= 1
+        li[j + 1] = tmp
+
+
+li = [random.randint(0, 100) for i in range(10)]
+print(li)
+# bubble_sort(li)
+# select_sort(li)
+insert_sort(li)
+print(li)
