@@ -1,0 +1,11 @@
+'''
+10/13位时间戳
+'''
+import time
+
+t = time.time()
+t10 = int(time.time())
+t13 = int(float(time.time()*1000))
+
+print(t10) 
+print(t13)
