@@ -1,0 +1,75 @@
+from scrapy import Selector
+from selenium import webdriver
+from selenium.webdriver.chrome.webdriver import Options
+
+'''
+# 使用selenium + 协程 实现对虎牙平台的多页数据抓取 -- 主要解决js加载页码的问题
+虎牙主播 二次元 url = "https://www.huya.com/g/2633"
+html
+翻页
+
+虎牙平台-游戏主播偏多
+'''
+
+
+# 请求
+def se_lenium(url):
+    # 无头浏览器设置
+    op = Options()
+    op.add_argument('--headless') # 无头
+    op.add_argument('blink-settings=imagesEnabled=false') # 免加载图片
+    op.add_argument('--disable-gpu') # 规避bug
+    op.add_experimental_option('excludeSwitches', ['enable-automation']) # 隐藏浏览器标识
+    bro = webdriver.Chrome(options=op)
+    source = ""
+    # bro = webdriver.Chrome()
+    bro.get(url)
+    while True:
+        yield source
+        try:
+            bro.implicitly_wait(5)
+            bro.execute_script('window.scrollTo(0,document.body.scrollHeight)')
+            source = bro.page_source
+            # 判断下一页存在
+            bro.find_element_by_class_name('laypage_next').click()
+        except Exception as e:
+            # print(e)
+            # 判断下一页不存在时，将None值传回生产者，终止循环
+            source = None
+
+
+# 解析
+def parse(c):
+    c.__next__()
+    while True:
+        source = c.send(None)
+        if source: # 当接收值为None时，终止循环，关闭消费者
+            select = Selector(text=source)
+            for li in select.css('ul li'):
+                item = {}
+                item['title'] = li.xpath('./a[@class="title"]/@title').extract_first()
+                item['name'] = li.xpath('.//i[@class="nick"]/@title').extract_first()
+                if item['title'] != None:
+                    yield item
+        else:
+            break
+    c.close()
+
+
+# 运行
+def run(url):
+    c = se_lenium(url)
+    for item in parse(c):
+        print(item)
+        # 输出结构化数据 {'title': '5R一单包胜利，战神局教学带粉', 'name': '造夢者'}等
+
+
+if __name__ == '__main__':
+    # url = "https://www.huya.com/g/4079" # 交友板块
+    url = "https://www.huya.com/g/3203" # 游戏板块
+    run(url)
+
+    '''
+    进阶：
+        获取到不同板块的接口，使用多线程，多进程--并行处理，以达到爬取全部数据的目的
+    '''
