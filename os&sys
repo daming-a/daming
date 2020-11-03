@@ -1,0 +1,29 @@
+import os
+import sys
+
+# os模块
+# 文件相关
+# os.remove('a.txt')
+# os.remove('a.txt', 'b.txt')
+# 删除必须是空目录
+# os.removedirs('路径')
+
+# 和路径相关 os.path
+# res = os.path.dirname(r'') # 获取路径名
+# res = os.path.basename(r'') # 获取文件名
+# _,filename = os.path.split(r'') # 分离路径和文件名
+# path = os.path.join('','','') # 拼接路径
+# os.path.exists(r'')  # 判断目录文件是否存在
+# os.mkdir(r'')  # 创建目录
+
+
+# sys模块
+# 与python解释器相关
+
+# 获取命令行方式运行的脚本后面的参数
+# sys.argv[0] # 脚本名
+# sys.argv[1] # 脚本后的第一个参数
+# sys.argv[2] # 脚本后的第二个参数  等等
+
+# sys.path  # 解释器寻找模块的路径
+# sys.modules  # 已加载的模块
