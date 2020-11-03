@@ -1,0 +1,36 @@
+'''
+简单实现队列和栈
+
+'''
+
+
+# 共同的写在一起
+class Fu:
+    def __init__(self):
+        self.l = []
+
+    def put(self, item):
+        self.l.append(item)
+
+    def get(self):
+        return self.l.pop()
+
+
+# 队列 FIFO
+class Queue(Fu):
+
+    def get(self):
+        return self.l.pop(0)
+
+
+# 栈 LIFO
+class Stack(Fu):
+    pass
+
+
+s = Queue()
+for i in range(3):
+    s.put(i)
+
+a = s.get()
+print(a)
