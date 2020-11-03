@@ -1,0 +1,32 @@
+import hashlib  # 加密是用于验证，而非解密
+
+'''
+给一个数据加密的三大步骤：
+    1.获取一个加密对象 md5 sha224 等等
+    2.使用update方法，可以带调用多次，累加加密
+    3.通常是 通过hexdigest获取加密结果
+    
+给一个数据加密，
+    验证：
+        用另一个数据加密的结果与之对比，如果结果相同，说明原文相同 
+        
+        加密的算法主要是用于作为验证条件，而非解密
+        
+不同的加密算法：实际上是加密结果的长度不同
+    
+创建加密对象时，可以指定参数，称为'salt' 加盐 
+m=hashlib.md5(b'abc')  《==》  m=hashlib.md5().update(b'abc')  结果一样
+
+'''
+
+# md5
+# 获取加密对象
+m = hashlib.md5()
+# 使用对象的update,进行加密 必须是字节类型 b''  encode('utf-8')
+m.update(b'abc')
+# 出现中文时
+# m.update('abc中文'.encode('utf-8'))
+
+# 通过hexdigest获取加密结果
+res = m.hexdigest()
+print(res)
