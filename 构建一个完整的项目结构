@@ -1,0 +1,35 @@
+'''
+将一个完整项目进行分组
+
+blog
+
+    bin
+        start.py # 启动文件
+    conf
+        settings.py # 配置文件 - 静态路径/数据库连接的设置等  放置变量，而且从项目启动到结束不改变的
+    sore
+        src.py # 主逻辑的函数
+    db
+        register # 存放数据，文本数据等等
+    lib
+        common.py # 公共组件：装饰器 日志函数等
+    log
+        access.log # 日志文件数据
+
+
+
+'''
+
+'''
+需要注意 肯定会遇到 相互引用的问题   -- 可直接添加根目录 sys.path.append(r'C:/Users/ming/Desktop/testsssss/blog')
+
+'''
+import sys
+import os
+
+# 动态获取路径
+print(__file__)  # 动态获取本文件的绝对路径 C:/Users/ming/Desktop/testsssss/一个项目的结构.py
+print(os.path.dirname(__file__))  # 获取父级的目录 C:/Users/ming/Desktop/testsssss
+print(os.path.dirname(os.path.dirname(__file__)))  # 获取爷爷级的目录 C:/Users/ming/Desktop
+
+# 地址：https://www.bilibili.com/video/BV1aJ411H7Ej?p=103 如何构建一个完整的项目结构
