@@ -1,0 +1,53 @@
+import requests
+from scrapy import Selector
+
+# from fake_useragent import UserAgent
+
+'''
+糗事百科 : url = "https://www.qiushibaike.com/"
+html文本
+多页操作
+
+'''
+
+
+# 请求
+def url_request(url):
+    session = requests.Session()
+    headers = {
+        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"}
+    response = session.request('get', url, headers=headers)
+    return response
+
+
+# 解析
+def parse(response):
+    html = response.text
+    select = Selector(text=html)
+    # 查找标签--到具体位置
+    title = select.css('li .recmd-right a.recmd-content').xpath('./text()').extract()
+    href = select.css('li .recmd-right a.recmd-user').xpath('./img/@src').extract()
+    item_list = []
+    for t, h in zip(title, href):  # zip() 内元素不是一一匹配，就不显示
+        item = {}
+        item['title'] = t
+        item['href'] = h
+        item_list.append(item)
+    next_t = select.xpath('//ul[@class="pagination"]/li[last()]/a/@href').extract_first()
+    if next_t:
+        next_p = f'https://www.qiushibaike.com{next_t}'
+        return next_p, item_list
+
+
+def run(url):
+    next_p = url
+    while next_p:
+        response = url_request(next_p)
+        next_p, item_list = parse(response)
+        for item in item_list:
+            print(item)
+
+
+if __name__ == '__main__':
+    url = "https://www.qiushibaike.com/"
+    run(url)
