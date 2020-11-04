@@ -1,0 +1,27 @@
+
+定向爬取的爬虫
+深度爬取的爬虫
+数据的挖掘
+
+生产者  | 队列 |  消费者
+效率 - 网络问题
+app分析
+
+
+# requests 模块的网络请求流程
+    1)根据任务， 分析目标网站，数据的真实网络地址-url
+        - html静态网页 直接发起请求 requests.get(url)
+        - Ajax异步请求 抓包 -json数据 对包的地址发起请求
+        - js渲染 代码模拟js， 逆向js破解 或 selenium 自动化抓取(速度慢)
+    2)获取响应， 并解析获得数据
+        - 使用工具 re lxml-xpath pyquery-doc BeautifulSoup
+        - 结构化存储 def-for-in-yield{"key":"value"} 函数生成器
+    3)结构化存储
+        - 数据库 mysql redis mongodb
+        - 本地文件 csv json txt jpg mp4...
+    4)数据分析 得出结论
+        - numpy
+        - pandas
+        - 可视化实现
+
+IO密集型任务 -- 网络请求 数据存储  多线程爬虫 可以提高效率  推荐使用：单线程+异步协程
