@@ -1,0 +1,53 @@
+'''
+网络协议 http https  三次握手？dns解析。。。
+生产者消费者  queue sleep() while循环
+提高效率的方法： 时间上  异步模块gevent grequests aiohttp-asyncio 异步的方法pool.map_async()  分布式爬虫的部署
+scrapy框架
+解析工具  etree-xpath re pyquery
+验证码  自动化测试
+模拟登录
+代理
+反爬
+js解密
+APP数据的爬取经验
+前端知识， 一些前端的框架， 看懂意思就行
+数据分析， numpy pandas matplotlib可视化工具  以及web前端页面展示
+flask
+socket编程
+shell脚本语言
+数据库 mysql redis mongodb
+
+算法， 观察问题， 问题从大到小进行分解， 结论从小到大进行归纳    排序  递归  时间复杂度， 空间复杂度
+数据结构， 树结构
+高并发?
+sql注入?mysql数据库编写？
+vue.js以及MVVM前端知识？
+自动化测试？
+linux基本指令？
+Django框架？js,jquery,bootsrap框架？
+git代码管理工具
+
+
+公司需要的是：
+    可以立刻上岗工作的人
+
+问题 ： 上岗工作需要哪些能力？？ 什么样的而条件，我恰巧就能满足？最简单的我会不会做？
+
+爬取一个页面 requests grequests
+一些简单的js解码 js调试工具
+线程池、进程池 map_async(func,可迭代对象)
+异步协程asyncio
+生产者消费者模型的创建 -- >解决高并发的问题
+
+
+
+模拟登录 + 验证码
+一些难一点的解码????  -- selenium自动化测试工具， 太慢了， 有一些网站也是爬取不了
+分布式爬虫部署
+数据分析pandas
+数据库语句 mysql redis mongodb
+算法以及数据结构  循环&递归  将问题拆解为若干类似小问题， 从小问题开始， 处理了小问题， 大问题就是循环解决了  例：大列表 --> 小列表
+
+
+一些相关概念， 必须理清楚， 什么是什么， 不要有模糊不清的地方， 除非并不想知道， 可以用归纳类比的方法， 比如多线程和多进程， 在使用方式上基本一致
+'''
