@@ -1,0 +1,183 @@
+# ================================================================================================================
+GIL全局解释器锁-监视者 “单线程”-帽子戏法 “多线程”-多任务    --> 瞒天过海
+结论：多线程能够一定程度的提高效率  解决方法：单线程-异步协程  进程池
+
+深拷贝deepcopy-新对象和浅拷贝copy-原对象引用
+结论：对象的引用 -- id地址是不同  函数中的形参和实参 -- 全局变量和局部变量global, nonlocal  应用：将重要数据进行deepcopy， 保证不污染原数据
+
+xx公有变量  __xx私有变量 - 不被import导入   私有变量， 确保不被外部随意或恶意修改
+
+from a import func 相当于在本地copy了一个“同名的func变量”，指向了a里面的func方法，从而实现方法； 但是a内的func并没有改变
+结论： 在使用from-import时， 各个模块.py的变量属性是局部变量， 在开发过程中进行的引用， 不易过滥 ***
+
+面向对象class类  封装-继承-多态  类也是对象 -- 命名空间
+封装-独立执行对象-全局变量模板的引用  self-形参
+继承-简化代码-继承功能-属性和方法的引用  super().__init__() 会根据继承MRO顺序(son.__mro__查看)， 进行父类的调用 | 或者直接写父类名，进行调用
+多态-子类重写  子类的功能更强大
+命名空间 __new__创建对象，有内存空间 --> __init__对刚刚创建的空间，进行初始化，在__new__后， 执行的初始化
+
+实例对象方法 def func(self) 对象.方法
+类方法@classmethod def func(cls): -->指向类对象-->可对class类进行属性和方法的修改--全局变量的修改  会对实例对象造成影响
+静态方法@staticmethod def func(): 无需参数，还可以实现方法 --在定义类空间中，又独立出来的而空间， 可作为不被影响的“全局变量方法”
+特殊属性@property def func(self):   调用：对象.func  -->无需括号， 且必须返回一个值， 一定会执行 ==> 相当于访问属性
+
+实际研发中 多使用到类  要求有一个基类 加多个派生类 实现可拓展性， 派生类越多， 可拓展性越强， 需要多使用类的各种方法， 以及注释
+
+
+程序 = 数据结构 + 算法
+高级算法  有输入-有输出
+任务规模-时间复杂度
+
+观察分析问题
+问题， 从大到小进行分解
+结果， 从小到大进行归纳
+
+问题：
+    什么是scrapy?原理？功能？ request response item
+        原理： Twisted异步网络框架，可以加快我们的下载速度-效率高
+        目的： 为遍历爬行网站、分解提取结构性数据而设计的应用程序框架
+        优势： 通过少量代码实现快速抓取, 框架，根据需求进行修改
+        应用场景： 用于数据挖掘、监测和自动化测试
+        模块作用： 引擎-传递request/response 调度器-实现一个队列 下载器-处理request，返回response 管道-处理数据 下载器中间件-过滤请求和响应
+    生产者消费者是什么概念？处理哪方面的业务？
+        原理： 通过一个“容器”来解决生产者和消费者的强耦合问题。通过“阻塞队列”来进行通讯， 通过阻塞队列进行解耦  专一化，使关联性降低，降低耦合度
+        目的： 为了解决生产者消费者-处理效率不一致的问题
+        优势： 降低耦合度，支持并发， 支持忙闲不均(阻塞队列-缓冲区)
+        应用场景： 处理高并发-多线程
+        应用模块：queue-阻塞队列 threading-生产者/消费者
+        遇到的问题： “假死”的现象其实就是线程进入WAITING等待状态   生产者消费者线程， 都需要一个阻塞的等待sleep(1)
+    何为GIL？
+        全局解释器锁， 防止多线程并发执行， “帽子戏法” -- 实现多任务， 一定程度上提高效率  可以使用multiprocess代替threading
+    何为I/O密集型任务？ 何为CPU密集型任务？ -- multiprocess模块
+        IO密集型任务，是指磁盘IO、网络IO占主要的任务，计算量很小。比如请求网页、读写文件等 -- 多线程
+        计算密集型任务，是指CPU计算占主要的任务，比如在一个很大的列表中查找元素（当然这不合理），复杂的加减乘除等 -- 多进程
+    并发和并行， 是什么概念？
+        并发和并行都是完成多任务更加有效率的方式
+        并发：不同的代码块交替执行 -- 在同一实体上的多个事件   一个cpu
+        并行：不同的代码块同时执行 -- 是在不同实体上的多个事件  多个cpu  / 分布式爬虫部署，主+从
+        区别： 二者的主要区别在于是否是“同时进行”多个的任务
+        应用场景： 涉及到任务分解（有先后依赖的任务就不能做到并行）、任务运行（可能要考虑互斥、锁、共享等）、结果合并
+    高并发的解决方案？
+        高并发通常是指并发访问，也就是在某个时间点，有多少个访问同时到来
+        方案1： 选择更优质或大量的机器
+        方案2： 技术路线
+                流量优化：防盗链处理  -- 通过请求头中的referer或者签名，网站可以检测目标网页访问的来源网页
+                前端优化：减少HTTP请求，合并css或js，添加异步请求，启用浏览器缓存和文件压缩，CDN加速，建立独立图片服务器，
+                服务端优化：页面静态化，并发处理，队列处理
+                数据库优化：数据库缓存，分库分表，分区操作，读写分离，负载均衡
+                web服务器优化：负载均衡，nginx反向代理，7,4层LVS软件
+    什么使进程、线程、协程？
+        进程： 执行的程序  -- 进程内至少有一个线程， 也可以单独拥有多个协程
+        线程： 程序执行流的最小单元  -- 一个线程可以多个协程
+        协程：是一种用户态的轻量级线程，拥有自己的寄存器上下文和栈，直接操作栈则基本没有内核切换的开销， 可以不加锁的访问全局变量
+        区别： 进程线程都是同步机制，而协程则是异步
+        应用模块： multiprocessing-进、线程池 asyncio异步实现模块
+        应用场景： I/O密集型任务--多线程  CPU密集型任务--多进程 aiohttp-asyncio协程异步网络请求
+
+    什么是分布式爬虫？怎么进行部署？依赖那些模块？
+        依赖包： scrapy_redis + scrapy框架   分布机群， 组团忽悠，需要一个领头和一个管账的
+        原理： 共享调度器队列， 共享管道存储-redis的set类型-存储指纹集合，可以高效的去重
+        优势： 维护共享的爬取队列，集合指纹去重，识别保存的Request队列-防止中断
+        流程：
+            1.继承类RedisSpider
+            2.添加属性redis_key='类名:start_urls'
+            3.settings文件配置(REDIS_URL = 'redis://root:@192.168.52.176:6379'等)
+            4.服务端修改redis.windows.conf文件， 将你的代码发给另一台主机并打开
+            5.两台主机同时在控制台输入 scrapy  crawl   爬虫名，运行爬虫程序，因为没有start_urls所以会等待传入开始网址
+            6.开启服务端的主机另打开一个命令提示符，连接本地服务器，输入lpush + 第二步中的redis_key的值+ 开始网址
+            注意：客户端的小伙伴只需要将服务端的代码文件复制过来，打开运行就行了，不需要做其他操作
+            链接： https://blog.csdn.net/qq_42603652/article/details/81747713
+        应用场景：
+            专业用户：
+            有 N 台云主机，通过 Scrapy-Redis 构建分布式爬虫
+            希望集成身份认证
+            希望在页面上直观地查看所有云主机的运行状态
+            希望能够自由选择部分云主机，批量部署和运行爬虫项目，实现集群管理
+            希望自动执行日志分析，以及爬虫进度可视化
+            希望在出现特定类型的异常日志时能够及时通知用户，包括自动停止当前爬虫任务
+
+    cookies and session 是什么？ 实际应用场景？
+        session ：通过在服务端记录的信息确定⽤户身份，创建的会话对象可以跨请求保持某些参数，自动在后续的请求中添加获取的Cookie
+        cookies ：cookies中存储着session的编码信息，session中又存储了cookies的信息
+        会话对象是一种高级的用法，可以跨请求保持某些参数，比如在同一个session实例之间保存cookie，我们并不需要每次请求指定cookie，session会自动在后续的请求中添加获取的cookie。
+        应用场景： 使用session对象先行访问，并获取cookies，后续该会话将一直保存，并持续添加cookies
+
+    python2和python3的区别？
+        print函数： print() f'' format()
+        整数相除: / py3是浮点数
+        Unicode: py2-需要声名编码   py3-字符串默认就是Unicode  UTF-8编码
+        异常处理: py3--try-except Exception as-else-finally
+        xrange: py2-xrange-生成器  py3 - range-list
+        map函数： py2-返回list  py3-返回生成器
+
+    爬虫中， 使用到那些模块？ 请求模块？ 解析模块？
+        发起请求：
+            requests - get/post params/data text/content cookies/session会话 headers请求头 proxies代理 encoding status_code
+            asyncio-aiohttp - async await with-as proxy="" text()/read() tasks-事件循环 callback-处理数据
+        解析工具：
+            re - findall search-group() sub split compile 正则表达式-关键点 re.S r"(^.*?$)" \d+ \w \s {}
+            lxml-etree - xpath('//a[contains(text(),"下一页")]/@src')--list   first last ./ ../
+            pyquery - doc('#id .class a').items()  doc('a:last-child').attr('href') doc('a:contains("新闻")') text() find
+            selenium - webdriver.Chrome() 无头设置 不加载图片 设置缓存  谷歌浏览器一直在更新 get 延时 page_source js执行 find系列 等
+        效率提升：
+            multiprocessing 进程池，线程池 使用map_async(func,迭代对象) 异步实现 ready() successful() get()
+            threading 线程模块 Thread with-Lock  start() close() join()
+            time - sleep 在循环中，设置阻塞，释放资源
+            queue 阻塞队列-解耦 实现对生产者消费者效率的协同
+            gevent - 猴子补丁 补丁声名和模块引入，需在最开始进行
+            grequests - 异步请求-协程版 results=[grequests(i) fori in url_list]   grequests.map(results)
+        其他模块：
+            os - os.path.exists()  os.makedir os.rename  _,filename=os.path.split(url)
+            random - random randint choice|choices(k=) shuffle(lis) randrange([start],stop,[step])
+            hashlib - 主要提供字符加密功能，将md5和sha模块整合到了一起，支持md5,sha1, sha224, sha256, sha384, sha512等算法
+            base64
+
+    验证码问题和模拟登录问题？
+        使用打码平台的识别验证  超级鹰
+        流程：
+            编写自动化selenium爬虫
+            结合平台结果
+            输入、点击操作， 实现模拟登录
+
+    谈谈对mysql数据库的了解？ sql注入是什么？怎么解决？ MySQL怎么进行增删改查？ 它的应用场景有哪些？
+        pymysql - connect连接MySQL， cursor获取游标， sql模板“”， cursor.execute(sql) connect.commit() 关闭游标和连接
+        特点： 开源， 关系数据库 ， 当作一个 key-value 产品来使用， 具有优秀的灾难恢复功能
+        难点： 性能优化、高可用性、备份、集群、负载均衡、读写分离等问题
+        具体操作： insert into values(); delete from table1 where ; update table1 set ... [where]; select [*]from table1
+
+        应用场景：  Web 网站系统  日志记录系统 数据仓库系统 嵌入式系统
+    你还会其他的数据库嘛？ redis / mongodb  怎么进行配置？ 以及相应语句的操作， 优化方案有哪些？ 应用场景有哪些？
+        redis python连接Redis(post=,port=6379) set-sadd/spop/scard/smembers list-lpush/lpop/llen/lrange string-set/get/append
+        type del exists
+
+    数据分析时， 用到那些模块？ numpy / pandas / matplotlib可视化工具 怎么用？原理是什么？
+        numpy 二维数组   np.array([list])-一维    np.array([[],[]])-二维
+                        np.random.randint(0,150,size=(10,4),index=list('asdfghjxcv'),columns=['A','B','C','D','E'])
+        pandas Series(data=)-numpy的进阶版  优势：广播机制，省略了for循环；可按比例化简为0-1之间的小数，去量纲，要求：对齐
+               "表格"DataFrame(data=np.)  index,columns = 行,列  显式索引loc[]  隐式索引iloc[] --可进行取值和切片
+               方法：df.head()前5个 df.tail()后5个 df.sort()-排序 df.concatenate([df,df])-级联 df.shape/size/index/columns/values
+               一些计算函数：mean() median()-中位数 max() sum() var()-方差 std()-标准差
+                            add() sub() mul() truediv() floordiv() pow() mod()
+               数据清洗-去除空值：
+               空值定位：空数据df.isnull().any(axis=1) 非空数据df.notnull().all(axis=1)
+               扫除空值df.dropna()   合理填充df.fillna(value=df.mean())
+               保存文件：df.to_csv('./data.txt') df.to_exce('./data.xlsx')  读取df.read_csv('./data.txt')
+    谈谈你的项目？ 项目中遇到那些问题？ 怎么解决的？ 还有没有相应的优化方案？
+    你都做过那些反爬经验？ 加密的形式有哪些？ 如何解密？ 解密的过程中， 遇见哪些问题？ 怎么解决的？
+        headers请求头，session-cookies，IP代理池，请求频率，selenium+浏览器，Ajax抓包，JS解密-js调试器-扣js代码-python模块运行js代码
+        md5/base64/sha1哈希加密/
+    前端的知识， 你有过那些积累？ html / css / js
+    http/https网络协议， 前端的基本知识？ 发送请求--的本质含义是什么？ dns解析？三次握手？？？
+    什么是socket编程？
+    你知道那些算法以及优化的方式？
+    数据结构有哪些？定义？使用场景？
+
+
+问问题：
+    生产者消费者模型内， 最重要的， 是队列吗？
+    您对yield协程实现， 有什么见地？  https://www.jb51.net/article/149556.htm
+    什么样的数据采集， 才算得上是大规模？
+    都说“程序=算法+数据结构”， 您能谈谈您的观点吗？
+    可视化工具都有哪些应用场景？
+
+    作为领导者， 您觉得研发部门和其他职能部门， 是什么关系？ 运作流程是什么？ 希望能简要概述一下？
