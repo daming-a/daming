@@ -1,0 +1,56 @@
+ # 知乎面试： https://www.zhihu.com/question/324424541
+
+ 使用函数、类、list、dict 中的常用方法就算基本入门
+ def-for-in-yield   class继承     [推导式](生成器)[切片、取值] {key:value} get() items()
+
+ HTML 知识、
+ HTTP 协议的基本知识、
+ 正则表达式、re search()-group() findall()-list  re.S  r'(^.*?$)' \d+ [0-9] \w [a-z] {重复}
+ 数据库知识、redis mongodb mysql  创建与连接
+ 常用抓包工具的使用、chrome fiddler 开发者工具
+ 爬虫框架的使用、scrapy框架
+ 涉及到大规模爬虫，还需要了解分布式的概念、scrapy-redis分布式框架
+ 消息队列、queue模块 q.put(item)  item = q.get()
+ 常用的数据结构和算法、堆、栈、树  二分排序等
+ 缓存，
+ 甚至还包括机器学习的应用，大规模的系统背后都是靠很多技术来支撑的
+
+ 网络请求框架都是对 HTTP 协议的实现，requests 就是一个模拟浏览器发送 HTTP 请求的网络库
+ 熟悉了 HTTP协议的基本内容，
+ 数据爬下来，大部分情况是 HTML 文本，也有少数是基于 XML 格式或者 Json 格式的数据， 解析响应|抓包
+ 比如 JSON 数据可以直接使用 Python自带的模块 json，json.dumps()序列化 dict->str |  json.loads()反序列化 str->dict 前提是json格式{"key":"value"}
+ 对于 HTML 数据，可以使用 re、BeautifulSoup、lxml、pyquery 等库去处理， lxml-xpath  pyquery-doc 解析html文本数据  re正则的使用范围更广泛
+ 对于 xml 数据，除了可以使用 untangle、xmltodict 等第三方库
+
+ 爬虫工具里面，学会使用 Chrome 或者 FireFox 浏览器去审查元素，跟踪请求信息等等，开发者工具F12 XHR Doc JS -- 目的，找到对应的api接口-有效数据的url
+ 现在大部分网站有配有APP和手机浏览器访问的地址，优先使用这些接口，相对更容易。
+ 还有 Fiddler 等代理工具的使用
+
+ 数据清洗完最终要进行持久化存储，本地文件存储 数据库存储-mysql-pymysql|redis-redis|mongodb-pymongodb -- 模块创建数据库连接-调用数据库
+ 你可以用文件存储，比如CSV文件，txt、 json
+ 也可以用数据库存储，简单的用 redis，专业点用 MySQL，或者是分布式的文档数据库 MongoDB，
+ 这些数据库对Python都非常友好，有现成的库支持，你要做的就是熟悉这些 API 怎么使用
+
+ *********************************************************************************
+ 考验内功的时候，很多网站都设有反爬虫策略，UA检测-headers/cookies ajax请求 js渲染 ip代理 验证码
+ 比如会有各种奇奇怪怪的验证码限制你的请求操作、验证码识别-机器学习 cookies - Session()会话对象
+ 对请求速度做限制，time.sleep(random.randint(1,2))  分布式爬虫
+ 对IP做限制、构建代理池proxies=[{'http':'http://ip:端口'},{},...]  random.choice(proxies)
+ 甚至对数据进行加密操作，js加密 - 可变参数的获取 运用python代码， 实现js逻辑， 发起请求， 获得响应
+ 你需要深入理解 HTTP 协议，你需要理解常见的加解密算法，
+ 你要理解 HTTP 中的 cookie，HTTP 代理，HTTP中的各种HEADER
+
+ 进行大规模爬虫，通常都是从一个URL开始爬，start_url-网站首页/next_url-下一页/根据url特征性-重构url/detail_url-详情页url/parse_detail-详情页解析
+ 然后把页面中解析的URL链接加入待爬的URL集合中，
+ 我们需要用到队列或者优先队列来区别对待有些网站优先爬，有些网站后面爬。队列及优先队列
+
+ 每爬去一个页面，是使用深度优先还是广度优先算法爬取下一个链接。
+ 每次发起网络请求的时候，会涉及到一个DNS的解析过程（将网址转换成IP）为了避免重复地 DNS 解析，我们需要把解析好的 IP 缓存下来。
+ URL那么多，如何判断哪些网址已经爬过，哪些没有爬过，
+ 简单点就是是使用字典结构来存储已经爬过的的URL，
+ 但是如果碰过海量的URL时，字典占用的内存空间非常大，
+ 此时你需要考虑使用 Bloom Filter（布隆过滤器），
+
+ 如果提高爬虫效率，生产者消费者模型-降低耦合度-是关联性降低-各自按照各自的任务执行 擀面皮+包包子+柜台queue+顾客 进程、线程、协程的实现
+ 是使用多线程，多进程还是协程，multiprocessing threading asyncio-aiohttp
+ 还是分布式操作。主机-调度/判断/分发/信息共享-1 -- 从机-执行-n
