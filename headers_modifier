@@ -1,6 +1,6 @@
 '''
 User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36
-headers - 修改器，格式化输出请求头  解决问题：input换行中断问题
+headers - 修改器，格式化输出请求头  解决问题：input换行中断问题，需要*注意*的是，此时input就必须要手动结束了
 '''
 import re
 
