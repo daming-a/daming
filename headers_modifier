@@ -1,0 +1,42 @@
+'''
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36
+headers - 修改器，格式化输出请求头  解决问题：input换行中断问题
+'''
+import re
+
+
+def header(text):
+    # 先把'''长字符串'''分隔开  ‘Cache-Control: max-age=0’ 和‘Connection: keep-alive’ 再for遍历
+    t1 = re.split('\n', text, re.S)
+    for t2 in t1:
+        t = [i.strip() for i in t2.split(':')]  # 分开，去空格
+        new = f'"{t[0]}":"{t[1]}",'  # 组合起来
+        yield new
+
+
+# text = '''User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'''
+# text = input('请输入:')
+# for i in header(text):
+#     print(i)
+
+# 实现回车换行，而不是结束
+endstr = "end"  # 重新定义结束符
+for line in iter(input, endstr):  # 每行接收的东西
+    for headers in header(line):
+        print(headers)
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "zh-CN,zh;q=0.9",
+    "Cache-Control": "max-age=0",
+    "Connection": "keep-alive",
+    "Cookie": "IPLOC=CN3100; SUID=C8FA5D722C12960A000000005F8EFB81; SUV=1603206016390100; browerV=3; osV=1; pgv_pvi=3084268544; ssuid=4246937504; sw_uuid=3181644715; SGINPUT_UPSCREEN=1603269169052; usid=lpXETZVUaq2vBtwB; cd=1604641284&133d0b166dda204937274cb6acab9b5f; ABTEST=5|1604660688|v17; ld=fkllllllll2K0smIgfFPEqMOFTBKInw9tOTfhlllllkllllRxklll5@@@@@@@@@@; LCLKINT=1795; LSTMV=262%2C158; SNUID=4775D2FD8E8B3DF59445818E8F16F149",
+    "Host": "www.sogou.com",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+}
