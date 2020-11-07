@@ -1,0 +1,57 @@
+class PyStack:
+    def __init__(self, size=20):
+        self.stack = []
+        self.size = size
+        self.top = -1  # 就是栈顶
+
+    def setSize(self, size):
+        self.size = size
+
+    def Top(self):
+        return self.top
+
+    def push(self, element):
+        if self.isFull():
+            raise StackException('PyStackOverflow')
+        else:
+            self.stack.append(element) # 每push入栈一个元素，栈顶位置index+1
+            self.top += 1
+
+    def pop(self):
+        if self.isEmpty():
+            raise StackException('PyStackUnderflow')
+        else:
+            element = self.stack[-1]
+            self.top -= 1
+            del self.stack[-1]
+            return element
+
+    def empty(self):  # 参数初始化
+        self.stack = []
+        self.top = -1
+
+    def isFull(self):  # 三元表达式
+        return True if self.top == self.size - 1 else False
+
+    def isEmpty(self):
+        return True if self.top == -1 else False
+
+
+class StackException(Exception):  # 自定义异常类
+    def __init__(self, data):
+        self.data = data
+
+    def __str__(self):
+        return self.data
+
+
+if __name__ == '__main__':
+    stack = PyStack()
+    for i in range(10):
+        stack.push(i)               # 入栈
+    print('栈顶', stack.Top())
+    for i in range(10):
+        print('弹栈', stack.pop())   # 出栈
+    stack.empty()                   # 清空
+    for i in range(21):
+        stack.push(i)               # 自定义异常
