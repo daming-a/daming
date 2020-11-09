@@ -1,0 +1,45 @@
+#单例模式 确保一个类只有一个实例 1.使用模块导入，一次加载，内存地址不变 2.基于类的实现--__new__方法实现
+import time
+import threading
+class Singleton(object):
+    _instance_lock = threading.Lock()
+    def __init__(self):
+        time.sleep(1)
+    
+    @classmethod # 类方法，传入cls参数
+    def __new__(cls,*args,**kwargs):
+        if not hasattr(Singleton,'_instance'):
+            with Singleton._instance_lock: # 为保证数据安全，线程内加锁
+                if not hasattr(Singleton,'_instance'): # 类加括号，就会去执行__new__方法，则会创建一个类实例：Singleton()
+                    Singleton._instance = object.__new__(cls)
+                    # 继承object的__new__方法，调用方法创建实例
+        return Singleton._instance # 类加括号就会先执行__new__，再执行__init__
+def task(arg):
+    obj = Singleton()
+#     print(obj)    # 多次创建的实例，id一致，代表只有唯一一个实例--单例模式
+for i in range(10):
+    t = threading.Thread(target=task,args=(i,))
+    t.start()
+
+#########################################
+# 装饰器实现单例
+def wrapper(cls):
+    instance = {}
+    def inner(*args,**kwargs):
+        if cls not in instance:
+            instance[cls] = cls(*args,**kwargs) # 利用了字典key值的唯一性
+        return instance[cls]
+    return inner
+
+@wrapper
+class Singlton(object):
+    def __init__(self,name,age):
+        self.name = name
+        self.age = age
+        
+obj1 = Singlton('zhuming',23)
+obj2 = Singlton('lisi',20)
+print(obj1)
+print(obj2) # id相同，实现装饰器-单例模式
+
+    
