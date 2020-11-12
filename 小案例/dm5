@@ -1,0 +1,51 @@
+from gevent import monkey
+
+monkey.patch_all() # 打上猴子补丁，
+from gevent.pool import Pool
+import gevent
+import requests
+from fake_useragent import UserAgent
+from scrapy import Selector
+import redis
+import json
+
+headers = {'User-Agent': UserAgent().random}
+
+
+def save_redis(item):
+    connect = redis.Redis(host='localhost', port=6379)
+    try:
+        connect.sadd('dm5', json.dumps(item))
+    except Exception as e:
+        print(f'插入失败{e}')
+
+
+def url_request(url):
+    session = requests.Session()
+    html = session.get(url, headers=headers).text
+    select = Selector(text=html)
+    try:
+        title = select.css('div.mh-item-detali > h2 > a').xpath('./text()').extract()
+        href = select.css('div.mh-item-detali > h2 > a').xpath('./@href').extract()
+    except Exception as e:
+        print(e)
+        pass
+    else:
+        item = {}
+        for t, h in zip(title, href):
+            item['title'] = t
+            item['href'] = f'http://www.dm5.com{h}'
+            save_redis(item)
+            print(f'{t}保存完毕')
+
+
+def main():
+    pool = Pool(10)
+    url_list = [f"http://www.dm5.com/manhua-list-p{i}/" for i in range(1, 416)]
+    tasks = [pool.spawn(url_request, url) for url in url_list]  # 加入到协程池
+
+    gevent.joinall(tasks)  # 等待所有协程结束
+
+
+if __name__ == '__main__':
+    main()
