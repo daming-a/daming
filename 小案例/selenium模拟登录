@@ -1,0 +1,91 @@
+'''
+使用selenium模块登录
+
+进入微博登录页面，避免非必要的验证码 -- 使用Pillow模块处理验证码图片 + 超级鹰官方网站:http://www.chaojiying.com
+
+'''
+from selenium import webdriver
+from PIL import Image
+import time
+from taobao.chaojiying import Chaojiying_Client
+
+
+# selenium登录
+class Login:
+    def __init__(self):
+        self.url = "https://login.taobao.com/"  # 登陆界面
+        self.bro = webdriver.Chrome()
+
+    def se_lenium_login(self):
+        # ########################不需要验证码，直接登录#######################################
+        self.bro.get(self.url)  # 请求登陆界面
+        self.bro.implicitly_wait(10)
+        self.bro.maximize_window()  # 屏幕最大化
+        # 确定微博登录位置,点击进入   -- 会出现的情况-页面没有刷新？刷新时间较长？ 都会导致找不到相应的元素
+        try:
+            self.bro.find_element_by_css_selector('a.weibo-login').click()
+            # 进入微博登录页面，锁定账号密码及登录位置
+            self.bro.find_element_by_css_selector('#pl_login_logged > div > div:nth-child(2) > div > input').send_keys(
+                '123456')
+            self.bro.find_element_by_css_selector('#pl_login_logged > div > div:nth-child(3) > div > input').send_keys(
+                '321654')
+            self.bro.find_element_by_css_selector(
+                '#pl_login_logged > div > div:nth-child(7) > div:nth-child(1) > a > span').click()
+        except:
+            self.se_lenium_login()
+
+        return self.bro.current_url
+
+    def yanzhen(self):
+        # ########################需要验证码时，下载验证码图片###################################
+        try:
+            time.sleep(5)  # 显式等待 -- 等待验证码加载 - 主要受后台验证-以及网速的影响
+            self.bro.save_screenshot('./img1.png')
+            box = (1325, 358, 1470, 415)  # 手动获取验证码位置-截图位置  左上、右下 两个点位置 -- 注意屏幕的大小
+            ran = Image.open('./img1.png').crop(box).save('./img2.png')  # crop(box) 截取图片大小
+            ''' 等待设置
+                self.bro.implicitly_wait(10)  # 这里需要等待验证码以及输入框刷新出现
+                1.data = self.bro.find_element_by_xpath(
+                    '//*[@id="pl_login_logged"]//a[@class="code"]/img').get_attribute('href')
+    
+                2.img_url = self.wait.until(lambda bro: bro.find_element_by_css_selector(
+                '#pl_login_logged > div > div:nth-child(4) > div > a.code > img')).get_attribute('src')   # 等待查找元素出现，再获取连接
+    
+                '''
+        except Exception as e:
+            print(e)
+            self.yanzhen()  # 出现异常，重新验证
+        else:
+            # 下一步进行验证码的识别， 交给三方机器学习库识别，或打码平台，得到result结果
+            # 使用超级鹰打码平台 类.方法  自己修改了它的代码，让接口变得更简单
+            # result = Chaojiying_Client().main('./img2.png')
+            result = '1223'  # 测试代替
+            print(result)
+
+            # 将识别后的结果输入,再次点击登录
+            self.bro.find_element_by_css_selector('#pl_login_logged > div > div:nth-child(4) > div > input').send_keys(
+                result)
+            self.bro.find_element_by_link_text('登录').click()
+            if self.bro.current_url.split('//')[1].startswith('taobao'): # 判断是否登陆成功
+                print('登陆成功')
+            else:
+                # 不成功，点击刷新验证码，再次验证
+                self.bro.find_element_by_css_selector(
+                    '#pl_login_logged > div > div:nth-child(4) > div > a.code > img').click()
+                self.yanzhen()
+        finally:
+            # 登陆成功...
+            self.bro.quit() # finally 退出
+
+    def main(self):
+        current_url = self.se_lenium_login()
+        if current_url.split('//')[1].startswith('taobao'):  # 将网址切片，以确定是否成功登录网页
+            print('登陆成功')
+        else:
+            # 否则进行验证
+            self.yanzhen()
+
+
+if __name__ == '__main__':
+    login = Login()
+    login.main()
