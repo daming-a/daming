@@ -1,0 +1,108 @@
+# 异步请求模块 asyncio aiohttp gevent grequests
+from gevent import monkey
+
+monkey.patch_all()
+import gevent
+from gevent.pool import Pool
+#  asyncio-aiohttp不建议与gevent共同使用，尤其是当monkey.patch_all()将阻塞事件挂起时
+import requests
+import time
+import asyncio
+import aiohttp
+# gevent与requests的结合 grequests 带有requests模块得特性以及gevent模块得异步实现
+import grequests
+
+'''
+当grequests 与 gevent以及猴子补丁 在使用时，都需要首个引用--放在最上方引用
+当grequests在gevent下方引入时会报错--得不到数据NoneType --AttributeError: 'NoneType' object has no attribute 'status_code'
+
+'''
+
+
+# 时间性能测试装饰器 -- 不能装饰multiprocessing模块构建的进线程池pool--池内部有自己的内存环境
+def wrapper(f):
+    def inner(*args, **kwargs):
+        s = time.time()
+        res = f(*args, **kwargs)
+        print(time.time() - s)  # 性能测试
+        return res
+
+    return inner
+
+
+@wrapper
+def gevent_pool(url_lis):
+    pool = Pool(5)
+    task_list = [pool.spawn(request, url) for url in url_lis]  # 得到任务集
+    for i in gevent.joinall(task_list):  # 获取结果 get()
+        result = i.get()
+        print(result)
+
+
+def request(url):
+    response = requests.get(url).status_code
+    return response
+
+
+# asyncio-aiohttp
+# 使用async 构建函数
+async def request_aio(url):
+    await asyncio.sleep(1)  # 阻塞操作必须挂起  函数体内不允许出现同步操作  两个条件都必须满足
+    response = url
+    return response
+
+
+# 构建aiohttp异步请求
+async def url_request(url):
+    async with aiohttp.ClientSession() as session:
+        async with await session.get(url) as response:
+            status = response.status  # text() read() json()--await 对象.方法--结果
+            return status
+
+
+# aiohttp请求的回调函数
+def callback(task):
+    res = task.result()
+    return res  # 在回调函数中可对aiohttp请求后获取的数据进行解析/清洗/存储等
+
+
+@wrapper
+def asyncio_loop(url_lis):
+    task_list = []
+    for url in url_lis:
+        # task = asyncio.ensure_future(request_aio(url)) # async函数，自定义await asyncio.sleep(1)模拟挂起事件
+        task = asyncio.ensure_future(url_request(url))  # 创建结合aiohttp异步请求模块的future对象
+        task.add_done_callback(callback)  # 为每个future对象绑定一个回调函数--进行解析/清洗/存储数据的操作
+        task_list.append(task)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.wait(task_list))  # 任务集需要使用事件循环来执行
+
+    for task in task_list:
+        print(task.result())  # 得到的其实是future对象的返回值，使用result()取值  这里与回调函数取值一样
+    # loop.close()  # 关闭事件循环，不然会重启
+
+
+# grequests异步模块
+@wrapper
+def g_request(url_lis):
+    task_list = [grequests.get(url) for url in url_lis]
+    res = grequests.map(task_list) # 调用对象.map()方法  运行任务集 -- >得到一个集合
+
+    for result in res:
+        print(result.status_code)
+    return res
+
+
+if __name__ == '__main__':
+    url_list = ['http://www.baidu.com', 'http://www.taobao.com', 'http://www.sogou.com']
+    # 调用gevent_pool  0.31618499755859375
+    # gevent_pool(url_list)
+
+    # asyncio模块实现异步  async异步函数内不允许出现同步代码request.get，且对于阻塞的操作必须await挂起   1.0027344226837158
+    # asyncio_loop(url_list)
+
+    # 使用asyncio-aiohttp 异步请求模块组合  0.3397867679595947
+    # asyncio_loop(url_list)
+
+    # 调用grequests异步模块  0.3203001022338867
+    g_request(url_list)
