@@ -1,0 +1,138 @@
+import requests
+import re
+import json
+import hashlib
+import time
+import redis
+import pymongo
+
+# js解密处理
+# 解密sign值 首先判断是md5
+'''
+加密需要： 
+1.token为 cookies中获取 _m_h5_tk=ae3a44cd29d1e551b3968c2cde403c31 _1605842882161;
+2.13位时间戳  int(time.time() * 1000)
+3.固定值g='12574478' 
+4.data:'{"keyword":"卫衣","ppath":"","loc":"","minPrice":"","maxPrice":"","ismall":"1","ship":"","itemAssurance":"","exchange7":"","custAssurance":"","b":"",
+"clk1":"66e5a896ffe187b2353e4354284d76c7","pvoff":"","pageSize":"100","page":"4","elemtid":"1","refpid":"mm_10011550_0_0","pid":"430698_1006","featureNames":"spGoldMedal,dsrDescribe,dsrDescribeGap,dsrService,dsrServiceGap,dsrDeliver, dsrDeliverGap",
+"ac":"lWg9GKUIXw8CAXJd+sjozqqf","wangwangid":"","catId":""}'
+
+***data中的clk1与ac都是有变化的 -- 加密的时候需要进行替换***
+ac --> cookie: cna=Qv8zGGDJQHoCAbSl1Ohq0COV;
+clk1 --> 原html的url中获取 clk1=8bc8145145092d0b7d527dc923b60466
+html_url --> https://jingxuan.tmall.com/sem/tmsearch?spm=a2e1o.8267851.07626516003.3.18777b7dGZjs2Q&keyword=%E5%8D%AB%E8%A1%A3&refpid=mm_10011550_0_0&clk1=8bc8145145092d0b7d527dc923b60466&page=3&_input_charset=utf-8
+数据API接口 https://h5api.m.tmall.com/h5/mtop.alimama.union.sem.landing.pc.items/1.0/?jsv=2.4.0&appKey=12574478&t=1605837166526&sign=dc125ff1f0e713e290fbf760a75b0d50&api=mtop.alimama.union.sem.landing.pc.items&v=1.0&AntiCreep=true&dataType=jsonp&type=jsonp&ecode=0&callback=mtopjsonp1&data={"keyword":"卫衣","ppath":"","loc":"","minPrice":"","maxPrice":"","ismall":"1","ship":"","itemAssurance":"","exchange7":"","custAssurance":"","b":"","clk1":"8bc8145145092d0b7d527dc923b60466","pvoff":"","pageSize":"100","page":"3","elemtid":"1","refpid":"mm_10011550_0_0","pid":"430698_1006","featureNames":"spGoldMedal,dsrDescribe,dsrDescribeGap,dsrService,dsrServiceGap,dsrDeliver, dsrDeliverGap","ac":"Qv8zGGDJQHoCAbSl1Ohq0COV","wangwangid":"","catId":""}
+'''
+
+
+class TianMao:
+    def __init__(self, keyword):
+        # 加密需要的参数  避免过多请求，且令牌时效性较长，所以手动获取cookie
+        self.token = re.findall('_m_h5_tk=(.*?)_', cookie)[0]  # 从cookie中 _m_h5_tk=ae3a44cd29d1e551b3968c2cde403c31
+        self.ac = re.findall('cna=(.*?);', cookie)[0]  # 从coolie中寻找  cookie: cna=Qv8zGGDJQHoCAbSl1Ohq0COV;
+        self.servertime = int(time.time() * 1000)
+        self.keyword = keyword
+        self.headers = {
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": "zh-CN,zh;q=0.9",
+            "cookie": cookie, # 手动获取cookie
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3823.400 QQBrowser/10.7.4307.400",
+            "Host": "h5api.m.tmall.com"
+        }
+    '''这里准备函数请求获取cookies，为避免过度请求，采用手动获取，此方案不适合'''
+    # 获取cookies
+    # def get_cookies(self): # 会话获取cookies，并给条件重新赋值
+    #     session = requests.Session()
+    #     cookies = session.get().cookies.get_dict()
+    #     self.token = cookies.get() # 重新赋值
+    #     self.ac = cookies.get()
+
+    # md5加密
+    # 查看网站-md5加密，这里使用hashlib模块处理
+    def entrypt(self, for_sign):
+        a = hashlib.md5()
+        a.update(for_sign.encode())
+        b = a.hexdigest()
+        return b
+
+    # 构建加密所需要素，加密并返回sign值
+    def get_sign(self):
+        # 加密需要替换-有三处  开头token/clk1/ac 从cookies中获取
+        for_sign = '%s&%d&12574478&{"keyword":"%s","ppath":"","loc":"","minPrice":"","maxPrice":"","ismall":"1","ship":"","itemAssurance":"","exchange7":"","custAssurance":"","b":"","clk1":"%s","pvoff":"","pageSize":"100","page":"%d","elemtid":"1","refpid":"mm_10011550_0_0","pid":"430698_1006","featureNames":"spGoldMedal,dsrDescribe,dsrDescribeGap,dsrService,dsrServiceGap,dsrDeliver, dsrDeliverGap","ac":"%s","wangwangid":"","catId":""}' % (
+            self.token, self.servertime, self.keyword,
+            clk1, page, self.ac)
+        sign = self.entrypt(for_sign)
+        # print(f'sign：{sign}') # 测试使用
+        # print(f'servertime:{self.servertime)
+        return sign
+
+    # 请求api
+    def request(self, sign):
+        # url = "https://h5api.m.tmall.com/h5/mtop.alimama.union.sem.landing.pc.items/1.0/?jsv=2.4.0&appKey=12574478&t=1605795190904&sign=fc03741ede88929b7178fe7c6b4c2114&api=mtop.alimama.union.sem.landing.pc.items&v=1.0&AntiCreep=true&dataType=jsonp&type=jsonp&ecode=0&data=%7B%22keyword%22%3A%22%E5%86%85%E8%A1%A3%22%2C%22ppath%22%3A%22%22%2C%22loc%22%3A%22%22%2C%22minPrice%22%3A%22%22%2C%22maxPrice%22%3A%22%22%2C%22ismall%22%3A%221%22%2C%22ship%22%3A%22%22%2C%22itemAssurance%22%3A%22%22%2C%22exchange7%22%3A%22%22%2C%22custAssurance%22%3A%22%22%2C%22b%22%3A%22%22%2C%22clk1%22%3A%2266e5a896ffe187b2353e4354284d76c7%22%2C%22pvoff%22%3A%22%22%2C%22pageSize%22%3A%22100%22%2C%22page%22%3A%223%22%2C%22elemtid%22%3A%221%22%2C%22refpid%22%3A%22mm_10011550_0_0%22%2C%22pid%22%3A%22430698_1006%22%2C%22featureNames%22%3A%22spGoldMedal%2CdsrDescribe%2CdsrDescribeGap%2CdsrService%2CdsrServiceGap%2CdsrDeliver%2C%20dsrDeliverGap%22%2C%22ac%22%3A%22lWg9GKUIXw8CAXJd%2Bsjozqqf%22%2C%22wangwangid%22%3A%22%22%2C%22catId%22%3A%22%22%7D"
+        url = "https://h5api.m.tmall.com/h5/mtop.alimama.union.sem.landing.pc.items/1.0/"
+
+        params = {
+            "jsv": "2.4.0",
+            "appKey": "12574478",
+            't': self.servertime,
+            "sign": sign,
+            "api": "mtop.alimama.union.sem.landing.pc.items",
+            "v": "1.0",
+            "AntiCreep": "true",
+            "dataType": "jsonp",
+            "type": "jsonp",
+            "ecode": "0",
+            'data': '{"keyword":"%s","ppath":"","loc":"","minPrice":"","maxPrice":"","ismall":"1","ship":"","itemAssurance":"","exchange7":"","custAssurance":"","b":"","clk1":"%s","pvoff":"","pageSize":"100","page":"%d","elemtid":"1","refpid":"mm_10011550_0_0","pid":"430698_1006","featureNames":"spGoldMedal,dsrDescribe,dsrDescribeGap,dsrService,dsrServiceGap,dsrDeliver, dsrDeliverGap","ac":"%s","wangwangid":"","catId":""}' % (
+                self.keyword, clk1, page, self.ac)
+        }
+
+        with requests.get(url, headers=self.headers, params=params) as response:
+            if response.status_code == 200:
+                # print(response.text) # 测试使用
+                jso_n = re.findall('callback\((.*)\)$', response.text)[0] # 获取符合json格式的字符集
+                a = json.loads(jso_n)
+                item = {}
+                for i in a['data']['mainItems']:
+                    # 根据业务具体需求，获取相应的数据
+                    item['wangwangId'] = i['wangwangId'] # 店铺名称
+                    item['title'] = i['title'] # 商品名称
+                    item['promoPrice'] = i['promoPrice'] # 折扣价
+                    print(item)
+                # self.save_to_redis(item) # 保存数据库
+                # self.save_to_mongo(item)
+
+    def save_to_redis(self, item):
+        connect = redis.Redis(host='localhost', port=6379)
+        connect.lpush('TianMao', json.dumps(item))
+
+    def save_to_mongo(self, item):
+        client = pymongo.MongoClient(host='localhost', port=27017)
+        db = client['TianMao']
+        collection = db['key']
+        collection.insert_one({'stores': item})
+
+    def main(self):
+        sign = self.get_sign()  # 获取sign值
+        self.request(sign)
+
+
+if __name__ == '__main__':
+    page = 1
+    keyword = '电脑配件'
+    clk1 = "8bc8145145092d0b7d527dc923b60466"  # html网页的url中获取
+    cookie = "cna=Qv8zGGDJQHoCAbSl1Ohq0COV; xlly_s=1; tk_trace=1; t=4a40e7c8bce8d1959400b1ed65716aec; _tb_token_=533d943ee31ef; cookie2=1837e078ebb118b19d5d77ba1758623e; _m_h5_tk=ae3a44cd29d1e551b3968c2cde403c31_1605842882161; _m_h5_tk_enc=891a5d03855c313108101b4d930c8cac; isg=BBAQzGOveyTnwCcLYS4qPMPV9F5i2fQjN804bgrhBmusRbHv5Oi5sg60HQ2lkKz7; tfstk=cYtPBQql20nPmzjIWgsUPnw33ZIRaVfh1oWNreuRJE7Y9PJ1_sbL9tafltWEF8_l.; l=eBSgkUBPO4TFXCu-BO5BFurza77TUIJ88PVzaNbMiInca1kA9wgpYNQVrT-vWdtjgtfjGGxzpDC0bRh2-Xz38OkDBeYBdNAY4Yp9-"
+    tianmao = TianMao(keyword)
+    tianmao.main()
+
+'''
+1.令牌有时限，需要从cookie中获取要素，为避免过多请求，且令牌时限较长，所以采用手动获取cookie的方法
+2.需要拼接的要素：
+    加密：token ac servertime  clk1   
+    业务：keyword page
+3.注意data在程序两处的使用必须一致，这里使用变量拼接，由于data书写格式的特殊性--{...},使用方法 %s/%d % 变量   
+
+# 原网页获取clk1 https://jingxuan.tmall.com/sem/tmsearch?spm=a2e1o.8267851.07626516003.3.18777b7dGZjs2Q&keyword=%E5%8D%AB%E8%A1%A3&refpid=mm_10011550_0_0&clk1=8bc8145145092d0b7d527dc923b60466&page=3&_input_charset=utf-8
+# cookie获取token和ac  cookie从API接口获取
+# API接口 https://h5api.m.tmall.com/h5/mtop.alimama.union.sem.landing.pc.items/1.0/?jsv=2.4.0&appKey=12574478&t=1605837166526&sign=dc125ff1f0e713e290fbf760a75b0d50&api=mtop.alimama.union.sem.landing.pc.items&v=1.0&AntiCreep=true&dataType=jsonp&type=jsonp&ecode=0&callback=mtopjsonp1&data={"keyword":"卫衣","ppath":"","loc":"","minPrice":"","maxPrice":"","ismall":"1","ship":"","itemAssurance":"","exchange7":"","custAssurance":"","b":"","clk1":"8bc8145145092d0b7d527dc923b60466","pvoff":"","pageSize":"100","page":"3","elemtid":"1","refpid":"mm_10011550_0_0","pid":"430698_1006","featureNames":"spGoldMedal,dsrDescribe,dsrDescribeGap,dsrService,dsrServiceGap,dsrDeliver, dsrDeliverGap","ac":"Qv8zGGDJQHoCAbSl1Ohq0COV","wangwangid":"","catId":""}
+'''
