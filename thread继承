@@ -1,0 +1,55 @@
+'''
+多线程 下载小说
+threading.Thread
+requests
+scrapy.Selecter
+
+
+'''
+import requests
+import threading
+from scrapy import Selector
+
+
+class Book(threading.Thread):
+    def __init__(self, url):
+        super().__init__()  # 继承Thread类，构建多线程
+        self.lock = threading.Lock()  # 实现锁机制  确保安全
+        self.url = url
+
+    def con(self):
+        html_detail = ""
+        while True:
+            url = yield html_detail
+            with self.lock:  # 使用with语法
+                html = requests.get(url).text
+                select = Selector(text=html)
+                lis = [f'https://www.biqukan.com{url}' for url in set(select.css('dd a').xpath('./@href').extract())]
+                for url in lis:
+                    html_detail = requests.get(url).text
+
+    def parse(self, c):  # 解析数据
+        c.__next__()
+
+        html_detail = c.send(self.url)
+        sele = Selector(text=html_detail)
+        content = ''.join([i.strip() for i in sele.css('#content').xpath('./text()').extract()])
+        print(content)
+
+        c.close()
+
+    def run(self):
+        c = self.con()
+        self.parse(c)
+
+
+if __name__ == '__main__':
+    url_list = ""
+    book_list = []
+    for url in url_list:
+        book = Book(url)
+        book.start() # 默认调用run函数
+        book_list.append(book)
+
+    for i in book_list:
+        i.join()
